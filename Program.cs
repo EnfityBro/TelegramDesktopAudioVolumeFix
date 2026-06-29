@@ -17,20 +17,22 @@ namespace TelegramDesktopAudioVolumeFix
 
         private static void Main()
         {
+            Console.WriteLine($"Starting {AppName} ...\n");
+
             Mutex mutex = new Mutex(true, AppName, out bool createdNew);
             if (!createdNew)
                 return;
-
-            Console.WriteLine($"Starting {AppName} ...\n");
 
             RunApp();
         }
 
         private static void RunApp()
         {
+            Console.WriteLine($"{AppName} has been started!\n");
+
             while (true)
             {
-                Console.WriteLine("Checking ...");
+                DebugLog("Checking ...");
 
                 MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
                 MMDevice device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
@@ -43,7 +45,7 @@ namespace TelegramDesktopAudioVolumeFix
                     device.AudioEndpointVolume.MasterVolumeLevelScalar = 1.0f;
                     isTelegramPlaying = true;
 
-                    Console.WriteLine($"Telegram started playing. Volume set to 100% (was {previousVolume:P0})");
+                    DebugLog($"Telegram started playing. Volume set to 100% (was {previousVolume:P0})");
                 }
                 else if (!isPlaying && isTelegramPlaying)
                 {
@@ -51,7 +53,7 @@ namespace TelegramDesktopAudioVolumeFix
                     if (previousVolume >= 0)
                     {
                         device.AudioEndpointVolume.MasterVolumeLevelScalar = previousVolume;
-                        Console.WriteLine($"Telegram stopped. Volume restored to {previousVolume:P0}");
+                        DebugLog($"Telegram stopped. Volume restored to {previousVolume:P0}");
                     }
 
                     isTelegramPlaying = false;
@@ -75,7 +77,7 @@ namespace TelegramDesktopAudioVolumeFix
                 {
                     uint pid = session.GetProcessID;
 
-                    Console.WriteLine($"Current pid name: {Process.GetProcessById((int)pid)}");
+                    DebugLog($"Current pid name: {Process.GetProcessById((int)pid)}");
 
                     if (pid == 0)
                         continue;
@@ -91,11 +93,17 @@ namespace TelegramDesktopAudioVolumeFix
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"IsTelegramPlaying Exception: {ex.Message}");
+                    DebugLog(ex.Message);
                 }
             }
 
             return false;
+        }
+
+        [Conditional("DEBUG")]
+        private static void DebugLog(string message)
+        {
+            Console.WriteLine(message);
         }
     }
 }
