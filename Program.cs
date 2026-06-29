@@ -11,13 +11,23 @@ namespace TelegramDesktopAudioVolumeFix
         private static float previousVolume = 50f;
         private static bool isTelegramPlaying = false;
 
+        private static readonly string AppName = "TelegramDesktopAudioVolumeFix";
         private static readonly string TelegramProcessName = "Telegram";
         private static readonly int CheckInterval = 1000;
 
         private static void Main()
         {
-            Console.WriteLine("Starting TelegramDesktopAudioVolumeFix ...\n");
+            Mutex mutex = new Mutex(true, AppName, out bool createdNew);
+            if (!createdNew)
+                return;
 
+            Console.WriteLine($"Starting {AppName} ...\n");
+
+            RunApp();
+        }
+
+        private static void RunApp()
+        {
             while (true)
             {
                 Console.WriteLine("Checking ...");
