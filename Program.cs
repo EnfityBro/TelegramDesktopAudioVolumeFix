@@ -19,6 +19,7 @@ namespace TelegramDesktopAudioVolumeFix
         {
             Console.WriteLine($"Starting {AppName} ...\n");
 
+            Console.Title = AppName;
             Mutex mutex = new Mutex(true, AppName, out bool createdNew);
             if (!createdNew)
                 return;
