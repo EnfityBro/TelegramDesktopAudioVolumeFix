@@ -18,13 +18,12 @@ namespace TelegramDesktopAudioVolumeFix
         {
             Console.WriteLine("Starting TelegramDesktopAudioVolumeFix ...\n");
 
-            MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-            MMDevice device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-
             while (true)
             {
                 Console.WriteLine("Checking ...");
 
+                MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+                MMDevice device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
                 bool isPlaying = IsTelegramPlaying(device);
 
                 if (isPlaying && (!isTelegramPlaying))
