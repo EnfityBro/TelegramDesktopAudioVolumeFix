@@ -6,6 +6,7 @@
 
 ## Requirements
 - Windows 10+
+- 2.7 Mb free space
 
 
 ## How to use
@@ -15,7 +16,6 @@
 
 
 ## Future plans
-- Improve stability.
 - Configure the app folder.
 - Add custom settings.
 - Add tray icon.

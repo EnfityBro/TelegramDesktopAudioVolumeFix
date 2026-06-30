@@ -2,12 +2,17 @@
 using NAudio.CoreAudioApi.Interfaces;
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace TelegramDesktopAudioVolumeFix
 {
     class Program
     {
+        #region Fields
+
+        private static MMDevice device;
+        private static ConsoleCtrlDelegate consoleHandler;
         private static float previousVolume;
         private static bool isTelegramPlaying;
 
@@ -16,6 +21,10 @@ namespace TelegramDesktopAudioVolumeFix
         private static readonly string telegramProcessName = "Telegram";
         private static readonly int checkInterval = 1000;
         private static readonly float defaultMaxVolume = 1.0f;
+
+        #endregion
+
+        #region Main Life Cycle
 
         private static void Main()
         {
@@ -32,6 +41,9 @@ namespace TelegramDesktopAudioVolumeFix
         private static void InitializeApp()
         {
             Console.Title = appName;
+
+            consoleHandler = new ConsoleCtrlDelegate(ConsoleCtrlHandler);
+            SetConsoleCtrlHandler(consoleHandler, true);
         }
 
         private static void RunApp()
@@ -43,8 +55,8 @@ namespace TelegramDesktopAudioVolumeFix
                 DebugLog("Checking ...");
 
                 MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-                MMDevice device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-                bool isPlaying = IsTelegramPlaying(device);
+                device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+                bool isPlaying = IsTelegramPlaying();
 
                 if (isPlaying && (!isTelegramPlaying))
                 {
@@ -76,7 +88,7 @@ namespace TelegramDesktopAudioVolumeFix
             }
         }
 
-        private static bool IsTelegramPlaying(MMDevice device)
+        private static bool IsTelegramPlaying()
         {
             AudioSessionManager sessionManager = device.AudioSessionManager;
             SessionCollection sessions = sessionManager.Sessions;
@@ -111,10 +123,62 @@ namespace TelegramDesktopAudioVolumeFix
             return false;
         }
 
+        #endregion
+
+        #region Exit Handle
+
+        private delegate bool ConsoleCtrlDelegate(CtrlTypes ctrlType);
+
+        [DllImport("kernel32.dll")]
+        private static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate handlerRoutine, bool add);
+
+        private static bool ConsoleCtrlHandler(CtrlTypes ctrlType)
+        {
+            switch (ctrlType)
+            {
+                case CtrlTypes.CTRL_C_EVENT:
+                    return true;
+                case CtrlTypes.CTRL_BREAK_EVENT:
+                    return true;
+                case CtrlTypes.CTRL_CLOSE_EVENT:
+                    ExitHandler();
+                    return false;
+                case CtrlTypes.CTRL_LOGOFF_EVENT:
+                    ExitHandler();
+                    return false;
+                case CtrlTypes.CTRL_SHUTDOWN_EVENT:
+                    ExitHandler();
+                    return false;
+            }
+
+            return false;
+        }
+
+        private static void ExitHandler()
+        {
+            if (previousVolume > 0)
+                device.AudioEndpointVolume.MasterVolumeLevelScalar = previousVolume;
+        }
+
+        private enum CtrlTypes
+        {
+            CTRL_C_EVENT = 0,
+            CTRL_BREAK_EVENT = 1,
+            CTRL_CLOSE_EVENT = 2,
+            CTRL_LOGOFF_EVENT = 5,
+            CTRL_SHUTDOWN_EVENT = 6
+        }
+
+        #endregion
+
+        #region Secondary
+
         [Conditional("DEBUG")]
         private static void DebugLog(string message)
         {
             Console.WriteLine(message);
         }
+
+        #endregion
     }
 }
