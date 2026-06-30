@@ -8,28 +8,35 @@ namespace TelegramDesktopAudioVolumeFix
 {
     class Program
     {
-        private static float previousVolume = 50f;
-        private static bool isTelegramPlaying = false;
+        private static float previousVolume;
+        private static bool isTelegramPlaying;
 
-        private static readonly string AppName = "TelegramDesktopAudioVolumeFix";
-        private static readonly string TelegramProcessName = "Telegram";
-        private static readonly int CheckInterval = 1000;
+        private static readonly string appName = "TelegramDesktopAudioVolumeFix";
+        private static readonly string appVersion = "v2";
+        private static readonly string telegramProcessName = "Telegram";
+        private static readonly int checkInterval = 1000;
+        private static readonly float defaultMaxVolume = 1.0f;
 
         private static void Main()
         {
-            Console.WriteLine($"Starting {AppName} ...\n");
+            Console.WriteLine($"Starting {appName} {appVersion} ...\n");
 
-            Console.Title = AppName;
-            Mutex mutex = new Mutex(true, AppName, out bool createdNew);
+            Mutex mutex = new Mutex(true, appName, out bool createdNew);
             if (!createdNew)
                 return;
 
+            InitializeApp();
             RunApp();
+        }
+
+        private static void InitializeApp()
+        {
+            Console.Title = appName;
         }
 
         private static void RunApp()
         {
-            Console.WriteLine($"{AppName} has been started!\n");
+            Console.WriteLine($"{appName} {appVersion} has been started!\n");
 
             while (true)
             {
@@ -41,27 +48,31 @@ namespace TelegramDesktopAudioVolumeFix
 
                 if (isPlaying && (!isTelegramPlaying))
                 {
-                    // Starting playback
-                    previousVolume = device.AudioEndpointVolume.MasterVolumeLevelScalar;
-                    device.AudioEndpointVolume.MasterVolumeLevelScalar = 1.0f;
-                    isTelegramPlaying = true;
+                    DebugLog($"Telegram started playing");
 
-                    DebugLog($"Telegram started playing. Volume set to 100% (was {previousVolume:P0})");
+                    previousVolume = device.AudioEndpointVolume.MasterVolumeLevelScalar;
+                    if (previousVolume > 0)
+                    {
+                        device.AudioEndpointVolume.MasterVolumeLevelScalar = defaultMaxVolume;
+                        DebugLog($"Volume set to {defaultMaxVolume:P0} (was {previousVolume:P0})");
+                    }
+
+                    isTelegramPlaying = true;
                 }
                 else if (!isPlaying && isTelegramPlaying)
                 {
-                    // End of playback
-                    if (previousVolume >= 0)
+                    DebugLog($"Telegram stopped playing");
+
+                    if (previousVolume > 0)
                     {
                         device.AudioEndpointVolume.MasterVolumeLevelScalar = previousVolume;
-                        DebugLog($"Telegram stopped. Volume restored to {previousVolume:P0}");
+                        DebugLog($"Volume restored to {previousVolume:P0}");
                     }
 
                     isTelegramPlaying = false;
-                    previousVolume = -1f;
                 }
 
-                Thread.Sleep(CheckInterval);
+                Thread.Sleep(checkInterval);
             }
         }
 
@@ -77,7 +88,6 @@ namespace TelegramDesktopAudioVolumeFix
                 try
                 {
                     uint pid = session.GetProcessID;
-
                     DebugLog($"Current pid name: {Process.GetProcessById((int)pid)}");
 
                     if (pid == 0)
@@ -85,7 +95,7 @@ namespace TelegramDesktopAudioVolumeFix
 
                     using (Process process = Process.GetProcessById((int)pid))
                     {
-                        if (process.ProcessName == TelegramProcessName)
+                        if (process.ProcessName == telegramProcessName)
                         {
                             if (session.State == AudioSessionState.AudioSessionStateActive)
                                 return true;
