@@ -1,7 +1,8 @@
 # TelegramDesktopAudioVolumeFix
 
 > [!NOTE]
-> Automatic volume increase of the system during audio playback in Telegram Desktop.
+> Automatic volume increase of the system during audio playback in Telegram Desktop.<br>
+> It's useful if you have problems with the volume when listening to voice messages or video messages in Telegram Desktop.
 
 
 ## Requirements
